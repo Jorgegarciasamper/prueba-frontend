@@ -1,16 +1,33 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
+// El token se pasa desde los componentes via useAuth() de Clerk.
+// Cada funcion que necesita autenticacion recibe el token como primer argumento.
+
+function authHeaders(token: string | null): HeadersInit {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export const api = {
+  // Publico -- no requiere login
   async getWorkflows() {
     const res = await fetch(`${API_URL}/api/workflows`);
     if (!res.ok) throw new Error("Error cargando workflows");
     return res.json();
   },
 
-  async createJob(workflowId: string, type: string, inputParams: Record<string, unknown>) {
+  // Protegido -- requiere token de Clerk
+  async createJob(
+    token: string | null,
+    workflowId: string,
+    type: string,
+    inputParams: Record<string, unknown>
+  ) {
     const res = await fetch(`${API_URL}/api/jobs`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders(token),
+      },
       body: JSON.stringify({
         workflow_id: workflowId,
         type,
@@ -24,20 +41,26 @@ export const api = {
     return res.json();
   },
 
-  async getJob(jobId: string) {
-    const res = await fetch(`${API_URL}/api/jobs/${jobId}`);
+  async getJob(token: string | null, jobId: string) {
+    const res = await fetch(`${API_URL}/api/jobs/${jobId}`, {
+      headers: authHeaders(token),
+    });
     if (!res.ok) throw new Error("Error cargando job");
     return res.json();
   },
 
-  async getJobs() {
-    const res = await fetch(`${API_URL}/api/jobs`);
+  async getJobs(token: string | null) {
+    const res = await fetch(`${API_URL}/api/jobs`, {
+      headers: authHeaders(token),
+    });
     if (!res.ok) throw new Error("Error cargando jobs");
     return res.json();
   },
 
-  async getCredits() {
-    const res = await fetch(`${API_URL}/api/credits`);
+  async getCredits(token: string | null) {
+    const res = await fetch(`${API_URL}/api/credits`, {
+      headers: authHeaders(token),
+    });
     if (!res.ok) throw new Error("Error cargando creditos");
     return res.json();
   },

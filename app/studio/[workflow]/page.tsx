@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, use } from "react";
 import { useSearchParams } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { api } from "../../../lib/api";
 import CharacterForm from "./CharacterForm";
@@ -31,6 +32,7 @@ export default function WorkflowPage({ params }: { params: Promise<{ workflow: s
   const { workflow: workflowSlug } = use(params);
   const searchParams = useSearchParams();
   const workflowId = searchParams.get("id") || "";
+  const { getToken } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [job, setJob] = useState<Job | null>(null);
@@ -42,7 +44,8 @@ export default function WorkflowPage({ params }: { params: Promise<{ workflow: s
     setError("");
     setJob(null);
     try {
-      const created = await api.createJob(workflowId, "image", inputParams);
+      const token = await getToken();
+      const created = await api.createJob(token, workflowId, "image", inputParams);
       setJob({ id: created.id, status: created.status, progress_percent: 0, output_url: null, error_message: null, credits_cost: created.credits_cost });
       if (MOCK_MODE) {
         simulateProgress();
@@ -134,7 +137,6 @@ export default function WorkflowPage({ params }: { params: Promise<{ workflow: s
             )}
 
             {job.status === "completed" && job.output_url && (
-              // eslint-disable-next-line @next/next/no-img-element
               <img src={job.output_url} alt="Resultado generado" className="w-full border" style={{ borderColor: "rgba(201,162,39,0.15)" }} />
             )}
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
 import { api } from "../../lib/api";
 
 const WORKFLOW_META: Record<string, { icon: string; tag: string; order: string }> = {
@@ -26,20 +27,30 @@ interface Credits {
 }
 
 export default function StudioPage() {
+  const { getToken } = useAuth();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [credits, setCredits] = useState<Credits | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    Promise.all([api.getWorkflows(), api.getCredits()])
-      .then(([wf, cr]) => {
+    async function load() {
+      try {
+        const token = await getToken();
+        const [wf, cr] = await Promise.all([
+          api.getWorkflows(),
+          api.getCredits(token),
+        ]);
         setWorkflows(wf);
         setCredits(cr);
-      })
-      .catch(() => setError("No se pudo conectar con el backend"))
-      .finally(() => setLoading(false));
-  }, []);
+      } catch {
+        setError("No se pudo conectar con el backend");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [getToken]);
 
   return (
     <main className="min-h-screen font-sans" style={{ background: "#0f0a08" }}>
@@ -169,11 +180,21 @@ export default function StudioPage() {
 }
 
 function RecentJobs() {
+  const { getToken } = useAuth();
   const [jobs, setJobs] = useState<{ id: string; status: string; input_params?: { prompt?: string }; type: string; credits_cost: number; output_url?: string | null }[]>([]);
 
   useEffect(() => {
-    api.getJobs().then(setJobs).catch(() => {});
-  }, []);
+    async function load() {
+      try {
+        const token = await getToken();
+        const data = await api.getJobs(token);
+        setJobs(data);
+      } catch {
+        // silencioso -- si falla no mostramos la seccion
+      }
+    }
+    load();
+  }, [getToken]);
 
   if (jobs.length === 0) return null;
 
