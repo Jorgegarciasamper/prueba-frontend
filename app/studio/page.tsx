@@ -38,7 +38,7 @@ export default function StudioPage() {
       try {
         const token = await getToken();
         const [wf, cr] = await Promise.all([
-          api.getWorkflows(),
+          api.getWorkflows(token),
           api.getCredits(token),
         ]);
         setWorkflows(wf);

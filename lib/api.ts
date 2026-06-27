@@ -8,9 +8,11 @@ function authHeaders(token: string | null): HeadersInit {
 }
 
 export const api = {
-  // Publico -- no requiere login
-  async getWorkflows() {
-    const res = await fetch(`${API_URL}/api/workflows`);
+  // Ahora protegido en el backend -- requiere token
+  async getWorkflows(token: string | null) {
+    const res = await fetch(`${API_URL}/api/workflows`, {
+      headers: authHeaders(token),
+    });
     if (!res.ok) throw new Error("Error cargando workflows");
     return res.json();
   },
